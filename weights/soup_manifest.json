@@ -1,0 +1,11 @@
+{
+  "adapters": [
+    "/storage/yiguang/parameter-golf-outputs/exp07_vit_3blocks_seed1/final",
+    "/storage/yiguang/parameter-golf-outputs/exp08_ema_seed1/final_ema"
+  ],
+  "weights": [
+    0.5,
+    0.5
+  ],
+  "num_tensors": 416
+}

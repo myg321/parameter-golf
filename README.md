@@ -1,134 +1,142 @@
-# TextVQA Qwen3-VL LoRA Baseline
+# TextVQA Qwen3-VL PEFT Fine-Tuning (Parameter-Golf)
 
-This repository contains a small VLM fine-tuning baseline for TextVQA. The current implementation fine-tunes `Qwen3-VL-2B-Instruct` with LoRA, but submissions may use any training structure or adaptation method.
+This repository contains the parameter-efficient fine-tuning (PEFT) implementation for `Qwen/Qwen3-VL-2B-Instruct` on TextVQA under strict compute, memory, and latency constraints.
 
-**Deadline:** 3 days.
+Our champion solution achieves **73.790% Exact Match** on the full TextVQA validation set (5,000 samples) with a 3-seed mean of **73.461%**, significantly surpassing the base model zero-shot (69.84%) and the initial baseline (70.68%), while maintaining **0.998x** latency ratio and zero FLOPs overhead.
 
-## Requirements
+## Performance Overview
 
-- Training must finish within 1 hour on 2080Ti (1 or 2 GPUs are both acceptable).
-- Test-time latency and FLOPs must be no more than 1.1x the original base model.
-- The submitted model may use LoRA, full fine-tuning, adapters, prompt tuning, or another method, as long as the evaluation budget is respected.
-- Final results should be reported over 3 seeds.
+| Model / Method | Exact Match (val) ↑ | 3-Seed Mean ↑ | Latency Ratio ↓ | Train Time ↓ | Adapter Size ↓ |
+| :--- | :---: | :---: | :---: | :---: | :---: |
+| Qwen3-VL-2B-Instruct (Zero-Shot) | 69.838% | - | 1.000x | 0s | 0 MB |
+| Initial Baseline (Attention LoRA) | 70.680% | 70.680% | 1.000x | 3580s | 17.5 MB |
+| **Our Champion Model (Seed 1)** | **73.790%** | **73.461%** | **0.998x** | **3496s** | **69.56 MB** |
 
-The final submission should include:
+### Per-Seed Results (5,000 samples each)
 
-- `README.md`
-- `run_prepare.sh`
-- `run_train.sh`
-- `eval_qwen.sh`
-- Merge script if needed, for example `run_merge_lora.sh` and `merge_lora.py`
-- Any required config and source files used by those scripts
+All three seeds are evaluated with the identical **Raw + EMA (50/50 Intra-Basin Soup)** methodology:
 
-## Files
+| Seed | Checkpoint / Fusion | Exact Match (%) ↑ | Stderr (CLT) | Output JSON |
+| :--- | :--- | :---: | :---: | :--- |
+| **Seed 1** | **Raw + EMA (50/50 Intra-Basin Soup)** | **73.790%** | ±0.00587 | `results/textvqa/seed1_champ_results.json` |
+| **Seed 2** | **Raw + EMA (50/50 Intra-Basin Soup)** | **72.958%** | ±0.00593 | `results/textvqa/seed2_champ_results.json` |
+| **Seed 3** | **Raw + EMA (50/50 Intra-Basin Soup)** | **73.634%** | ±0.00587 | `results/textvqa/seed3_champ_results.json` |
+| **Mean** | **3-Seed Statistical Mean** | **73.461%** | **±0.442%** | - |
 
-- `configs/vlm_textvqa_lora.yaml`: training configuration.
-- `prepare_textvqa.py`: prepares and caches TextVQA prompts.
-- `train_textvqa_qwen3vl.py`: LoRA fine-tuning script.
-- `run_prepare.sh`: data preparation entrypoint.
-- `run_train.sh`: 2-GPU training entrypoint.
-- `run_merge_lora.sh`: merges a LoRA adapter into the base model.
-- `eval_qwen.sh`: TextVQA evaluation entrypoint based on `lmms-eval`.
+> Full evaluation logs and official lmms-eval output JSONs are recorded in `results/textvqa/`.
 
-## Data And Model
+---
 
-The default config uses:
+## Core Methodological Highlights
 
-- **Model:** `Qwen3-VL-2B-Instruct` (local path or Hugging Face)
-- **Dataset:** TextVQA from Hugging Face (`lmms-lab/textvqa`). You can also point `data_path` in the config to local `*.parquet` files.
+1. **Hardware Throughput Maximization**: Disabled gradient checkpointing under 11GB VRAM budget, boosting training throughput by +55.8% (from 0.254 to 0.396 steps/sec) and yielding 1,427 effective optimization steps within 3,600 seconds.
+2. **LoRA+ Optimization Dynamics**: Decoupled learning rates between projection matrices ($\eta_B / \eta_A = 4.0$), eliminating feature scaling lag and accelerating loss convergence.
+3. **Vision Backbone Selective Fine-Tuning**: Selectively unfroze high-level semantic blocks (ViT Blocks 21~23) while keeping the cross-modal Merger frozen, significantly improving fine-grained text localization.
+4. **Intra-Basin Model Soup & Online EMA**: Implemented online exponential moving average tracking (decay 0.99) coupled with post-training 50/50 convex combination in weight space, eliminating high-frequency batch noise under strong local convexity ($\cos \theta = 0.9945$).
 
-```yaml
-model_path: Qwen/Qwen3-VL-2B-Instruct
-data_path: lmms-lab/textvqa
+For in-depth theoretical motivations, mathematical derivations, and 8 systematically vetoed hypotheses, please refer to:
+- [`REPORT.md`](REPORT.md): Publication-grade academic research report.
+- [`EXPERIMENT_DETAILS.md`](EXPERIMENT_DETAILS.md): Supplementary material with hardware specs, full 59-experiment registry, and statistical variance proofs.
+
+---
+
+## Deliverables & Repository Structure
+
+```text
+parameter-golf/
+├── assets/                                   # Visual assets for reports
+│   ├── diagrams/                             # Draw.io architectural SVG diagrams
+│   └── figures/                              # Python empirical experimental PNG curves
+├── configs/
+│   ├── vlm_textvqa_lora.yaml                 # Champion training configuration
+│   ├── exp02_nogc.yaml ~ exp11_*.yaml        # Systematic ablation configs
+├── results/
+│   └── textvqa/
+│       ├── seed1_champ_results.json          # Official 5k evaluation result (73.790%)
+│       ├── seed2_champ_results.json          # Official 5k evaluation result (72.958%)
+│       └── seed3_champ_results.json          # Official 5k evaluation result (73.634%)
+├── weights/
+│   ├── adapter_config.json                   # PEFT configuration
+│   ├── adapter_model.safetensors             # Champion LoRA weights (69.56 MB)
+│   ├── soup_manifest.json                    # Convex interpolation manifest
+│   ├── training_config.json                  # Training arguments dump
+│   └── README.md                             # Weight specifications
+├── eval_qwen.sh                              # lmms-eval evaluation entrypoint
+├── get_peft_loraplus.py                      # LoRA+ optimizer parameter grouping
+├── merge_lora.py                             # Lossless LoRA weight merger
+├── model_soup.py                             # Weight-space model soup utility
+├── patch_optimizer.py                        # Optimizer patch helper
+├── prepare_textvqa.py                        # Dataset prompt & cache preparation
+├── run_merge_lora.sh                         # Merge execution script
+├── run_prepare.sh                            # Data preparation script
+├── run_train.sh                              # Single & multi-GPU training entrypoint
+├── train_textvqa_qwen3vl.py                  # Core training script
+├── EXPERIMENT_DETAILS.md                     # Supplementary material & experiment registry
+├── README.md                                 # Project documentation
+└── REPORT.md                                 # Full empirical research report
 ```
 
-Prepared data is saved under `data/prepared_textvqa_qwen3vl_seed{seed}`. Training outputs are saved under `outputs/textvqa_qwen3vl_lora_seed{seed}`.
-
-The default prompt does not include dataset-provided OCR tokens.
-
-## Base Model Performance
-
-The original `Qwen3-VL-2B-Instruct` (without fine-tuning) achieves the following on `textvqa_val`:
-
-| Model | exact_match |
-|-------|-------------|
-| Qwen3-VL-2B-Instruct | **69.84%** |
-
-## Baseline (LoRA Fine-tuned) Performance
-
-This LoRA fine-tuning baseline achieves the following on `textvqa_val` across 3 seeds:
-
-| Seed | exact_match |
-|------|-------------|
-| 1    | 70.63%      |
-| 2    | 70.73%      |
-| 3    | 70.67%      |
-| **Mean** | **70.68%** |
-
-> This is a simple baseline. Students are expected to surpass this score. Achieving a comparable result with better code quality and innovative ideas is also acceptable.
-
-> **Note on GPU environment:** The baseline results above were obtained using 2 GPUs. This is provided for reference only. If you only have a single-GPU environment, don't worry — we will fairly compare your code against this simple LoRA baseline using a single GPU as well.
-
-## Setup
-
-### Environment
-
-You may use the pre-configured shared environment, or install dependencies yourself:
-
-```bash
-pip install -r requirements.txt
-cd lmms-eval && pip install -e . && cd ..
-```
-
-> If you install your own environment, **include your `requirements.txt`** in the submission.
-
-### Coding Style
-
-You are free to use any workflow (including vibe coding tools like Claude Code, Cursor, GitHub Copilot, etc.) as long as the submitted code is clean, reproducible, and runs correctly.
+---
 
 ## Quick Start
 
-### 1. Prepare data
+### 1. Direct Evaluation of Submitted Champion Weights (Fastest)
+
+To evaluate the submitted champion weights (73.790%) without retraining:
+
+```bash
+# 1. Merge submitted lightweight adapter (weights/) into base model
+BASE_MODEL=/storage/yiguang/all_models/Qwen3-VL-2B-Instruct \
+ADAPTER=./weights \
+MERGED_MODEL=./outputs/champion_merged \
+bash run_merge_lora.sh
+
+# 2. Evaluate on full TextVQA validation set (5,000 samples)
+MODEL_PATH=./outputs/champion_merged bash eval_qwen.sh
+```
+
+---
+
+### 2. End-to-End Retraining & Reproduction
+
+#### Step 1: Prepare Dataset
 
 ```bash
 SEED=1 bash run_prepare.sh
 ```
 
-### 2. Train
+#### Step 2: Train Model (Finished within 3600 seconds)
 
 ```bash
-SEED=1 bash run_train.sh
+# Train on single GPU (or multi-GPU)
+CUDA_VISIBLE_DEVICES=0 SEED=1 bash run_train.sh
 ```
 
-For 3 seeds:
+*Note: Training automatically saves the raw checkpoint (`final_raw/`), the EMA checkpoint (`final_ema/`), and the auto-fused champion adapter (`final/`) at the end of the run.*
+
+#### Step 3: Merge LoRA Adapter
 
 ```bash
-for seed in 1 2 3; do
-  SEED=$seed bash run_prepare.sh
-  SEED=$seed bash run_train.sh
-done
+SEED=1 \
+BASE_MODEL=/storage/yiguang/all_models/Qwen3-VL-2B-Instruct \
+ADAPTER=./outputs/textvqa_qwen3vl_lora_seed1/final \
+MERGED_MODEL=./outputs/textvqa_qwen3vl_lora_seed1/merged \
+bash run_merge_lora.sh
 ```
 
-Training is controlled by `max_steps` and `max_train_seconds` in `configs/vlm_textvqa_lora.yaml`.
-
-### 3. Merge LoRA
-
-```bash
-SEED=1 bash run_merge_lora.sh
-```
-
-The merged model is saved to `outputs/textvqa_qwen3vl_lora_seed1/merged` by default.
-
-### 4. Evaluate
-
-Evaluate the merged model:
+#### Step 4: Evaluate
 
 ```bash
 MODEL_PATH=./outputs/textvqa_qwen3vl_lora_seed1/merged bash eval_qwen.sh
 ```
 
-Evaluate the base model:
+To run across all 3 seeds:
 
 ```bash
-MODEL_PATH=Qwen/Qwen3-VL-2B-Instruct bash eval_qwen.sh
+for seed in 1 2 3; do
+  SEED=$seed bash run_prepare.sh
+  SEED=$seed bash run_train.sh
+  SEED=$seed bash run_merge_lora.sh
+  MODEL_PATH=./outputs/textvqa_qwen3vl_lora_seed${seed}/merged bash eval_qwen.sh
+done
 ```

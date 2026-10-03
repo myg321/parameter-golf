@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" width="900px" height="420px" viewBox="-0.5 -0.5 900 420" content="&lt;mxfile host=&quot;Electron&quot; agent=&quot;parameter-golf&quot; version=&quot;21.0.0&quot;&gt;
+  &lt;diagram id=&quot;pipeline-model-soup&quot; name=&quot;ModelSoup&quot;&gt;
+    &lt;mxGraphModel dx=&quot;900&quot; dy=&quot;500&quot; grid=&quot;1&quot; gridSize=&quot;10&quot; guides=&quot;1&quot; tooltips=&quot;1&quot; connect=&quot;1&quot; arrows=&quot;1&quot; fold=&quot;1&quot; page=&quot;1&quot; pageScale=&quot;1&quot; pageWidth=&quot;900&quot; pageHeight=&quot;420&quot; background=&quot;#ffffff&quot; math=&quot;1&quot; shadow=&quot;0&quot;&gt;
+      &lt;root&gt;
+        &lt;mxCell id=&quot;0&quot; /&gt;
+        &lt;mxCell id=&quot;1&quot; parent=&quot;0&quot; /&gt;
+
+        &lt;mxCell id=&quot;training&quot; value=&quot;&amp;lt;b&amp;gt;Single Training Run (Seed 1)&amp;lt;/b&amp;gt;&amp;lt;br&amp;gt;3600s, 1374 steps, 1x A40&amp;lt;br&amp;gt;Cosine Annealing Schedule&quot; style=&quot;rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;strokeWidth=2;fontSize=12;&quot; vertex=&quot;1&quot; parent=&quot;1&quot;&gt;
+          &lt;mxGeometry x=&quot;50&quot; y=&quot;160&quot; width=&quot;220&quot; height=&quot;70&quot; as=&quot;geometry&quot; /&gt;
+        &lt;/mxCell&gt;
+
+        &lt;mxCell id=&quot;final_ckpt&quot; value=&quot;&amp;lt;b&amp;gt;Raw Final Checkpoint&amp;lt;/b&amp;gt;&amp;lt;br&amp;gt;Step 1374 weights&amp;lt;br&amp;gt;Score: 73.622% (±0.00589)&quot; style=&quot;rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;strokeWidth=2;fontSize=11;&quot; vertex=&quot;1&quot; parent=&quot;1&quot;&gt;
+          &lt;mxGeometry x=&quot;340&quot; y=&quot;80&quot; width=&quot;200&quot; height=&quot;65&quot; as=&quot;geometry&quot; /&gt;
+        &lt;/mxCell&gt;
+
+        &lt;mxCell id=&quot;ema_ckpt&quot; value=&quot;&amp;lt;b&amp;gt;In-Batch EMA Checkpoint&amp;lt;/b&amp;gt;&amp;lt;br&amp;gt;Decay beta=0.99 (from step 800)&amp;lt;br&amp;gt;Score: 73.552% (±0.00590)&quot; style=&quot;rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;strokeWidth=2;fontSize=11;&quot; vertex=&quot;1&quot; parent=&quot;1&quot;&gt;
+          &lt;mxGeometry x=&quot;340&quot; y=&quot;240&quot; width=&quot;200&quot; height=&quot;65&quot; as=&quot;geometry&quot; /&gt;
+        &lt;/mxCell&gt;
+
+        &lt;mxCell id=&quot;soup&quot; value=&quot;&amp;lt;b&amp;gt;Intra-Basin Convex Combination&amp;lt;/b&amp;gt;&amp;lt;br&amp;gt;W_soup = 0.5 * W_final + 0.5 * W_ema&amp;lt;br&amp;gt;Weight Cosine Similarity = 0.9945&amp;lt;br&amp;gt;&amp;lt;b&amp;gt;🏆 Score: 73.790% (±0.00587)&amp;lt;/b&amp;gt;&quot; style=&quot;rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#2ca02c;strokeWidth=3;fontSize=12;&quot; vertex=&quot;1&quot; parent=&quot;1&quot;&gt;
+          &lt;mxGeometry x=&quot;610&quot; y=&quot;150&quot; width=&quot;250&quot; height=&quot;90&quot; as=&quot;geometry&quot; /&gt;
+        &lt;/mxCell&gt;
+
+        &lt;!-- Edges linking soup pipeline --&gt;
+        &lt;mxCell id=&quot;e_train_final&quot; value=&quot;Step 1374 Weights&quot; style=&quot;edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#82b366;strokeWidth=2;endArrow=classic;fontSize=10;&quot; edge=&quot;1&quot; parent=&quot;1&quot; source=&quot;training&quot; target=&quot;final_ckpt&quot;&gt;
+          &lt;mxGeometry relative=&quot;1&quot; as=&quot;geometry&quot; /&gt;
+        &lt;/mxCell&gt;
+        &lt;mxCell id=&quot;e_train_ema&quot; value=&quot;EMA Decay (beta=0.99)&quot; style=&quot;edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#d6b656;strokeWidth=2;endArrow=classic;fontSize=10;&quot; edge=&quot;1&quot; parent=&quot;1&quot; source=&quot;training&quot; target=&quot;ema_ckpt&quot;&gt;
+          &lt;mxGeometry relative=&quot;1&quot; as=&quot;geometry&quot; /&gt;
+        &lt;/mxCell&gt;
+        &lt;mxCell id=&quot;e_final_soup&quot; value=&quot;50% Linear Interpolation&quot; style=&quot;edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#82b366;strokeWidth=2;endArrow=classic;fontSize=10;&quot; edge=&quot;1&quot; parent=&quot;1&quot; source=&quot;final_ckpt&quot; target=&quot;soup&quot;&gt;
+          &lt;mxGeometry relative=&quot;1&quot; as=&quot;geometry&quot; /&gt;
+        &lt;/mxCell&gt;
+        &lt;mxCell id=&quot;e_ema_soup&quot; value=&quot;50% Linear Interpolation&quot; style=&quot;edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#d6b656;strokeWidth=2;endArrow=classic;fontSize=10;&quot; edge=&quot;1&quot; parent=&quot;1&quot; source=&quot;ema_ckpt&quot; target=&quot;soup&quot;&gt;
+          &lt;mxGeometry relative=&quot;1&quot; as=&quot;geometry&quot; /&gt;
+        &lt;/mxCell&gt;
+      &lt;/root&gt;
+    &lt;/mxGraphModel&gt;
+  &lt;/diagram&gt;
+&lt;/mxfile&gt;">
+  <defs>
+    <style type="text/css">
+      text { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; }
+    </style>
+    <marker id="arrow" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 8 5 L 0 9 z" fill="#333333" />
+    </marker>
+    <marker id="arrow-blue" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 8 5 L 0 9 z" fill="#6c8ebf" />
+    </marker>
+    <marker id="arrow-green" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 8 5 L 0 9 z" fill="#2ca02c" />
+    </marker>
+    <marker id="arrow-amber" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 8 5 L 0 9 z" fill="#d6b656" />
+    </marker>
+    <marker id="arrow-purple" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 8 5 L 0 9 z" fill="#9673a6" />
+    </marker>
+  </defs>
+  <rect x="0" y="0" width="900" height="420" fill="#ffffff" stroke="none" />
+  
+  <!-- Training -->
+  <g transform="translate(50, 160)">
+    <rect width="220" height="70" rx="8" fill="#dae8fc" stroke="#6c8ebf" stroke-width="2"/>
+    <text x="110" y="25" text-anchor="middle" font-size="12" font-weight="bold" fill="#1c3d5a">Single Training Run (Seed 1)</text>
+    <text x="110" y="44" text-anchor="middle" font-size="10" fill="#333333">3600s, 1374 steps, 1x A40</text>
+    <text x="110" y="58" text-anchor="middle" font-size="9" fill="#555555">Cosine Annealing Schedule</text>
+  </g>
+
+  <!-- Final Ckpt -->
+  <g transform="translate(340, 80)">
+    <rect width="200" height="65" rx="8" fill="#d5e8d4" stroke="#82b366" stroke-width="2"/>
+    <text x="100" y="24" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#274e13">Raw Final Checkpoint</text>
+    <text x="100" y="40" text-anchor="middle" font-size="10" fill="#333333">Step 1374 weights</text>
+    <text x="100" y="54" text-anchor="middle" font-size="9.5" fill="#555555">Exact Match: 73.622%</text>
+  </g>
+
+  <!-- EMA Ckpt -->
+  <g transform="translate(340, 240)">
+    <rect width="200" height="65" rx="8" fill="#fff2cc" stroke="#d6b656" stroke-width="2"/>
+    <text x="100" y="24" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#7f6000">In-Batch EMA Checkpoint</text>
+    <text x="100" y="40" text-anchor="middle" font-size="10" fill="#333333">Decay beta=0.99 (step 800+)</text>
+    <text x="100" y="54" text-anchor="middle" font-size="9.5" fill="#555555">Exact Match: 73.552%</text>
+  </g>
+
+  <!-- Soup Champion -->
+  <g transform="translate(610, 145)">
+    <rect width="250" height="100" rx="8" fill="#d5e8d4" stroke="#2ca02c" stroke-width="3"/>
+    <text x="125" y="25" text-anchor="middle" font-size="12" font-weight="bold" fill="#137333">Intra-Basin Convex Combination</text>
+    <text x="125" y="44" text-anchor="middle" font-size="10" fill="#333333">W_soup = 0.5 * W_final + 0.5 * W_ema</text>
+    <text x="125" y="60" text-anchor="middle" font-size="9.5" fill="#555555">Cosine Similarity = 0.9945 (Flat Basin)</text>
+    <text x="125" y="82" text-anchor="middle" font-size="12" font-weight="bold" fill="#d62728">Score: 73.790% (±0.00587)</text>
+  </g>
+
+  <!-- Arrows with arrowheads -->
+  <path d="M 270 180 L 305 180 L 305 112 L 335 112" stroke="#82b366" stroke-width="2" fill="none" marker-end="url(#arrow-green)"/>
+  <path d="M 270 210 L 305 210 L 305 272 L 335 272" stroke="#d6b656" stroke-width="2" fill="none" marker-end="url(#arrow-amber)"/>
+
+  <path d="M 540 112 L 575 112 L 575 180 L 605 180" stroke="#82b366" stroke-width="2" fill="none" marker-end="url(#arrow-green)"/>
+  <path d="M 540 272 L 575 272 L 575 210 L 605 210" stroke="#d6b656" stroke-width="2" fill="none" marker-end="url(#arrow-amber)"/>
+
+</svg>

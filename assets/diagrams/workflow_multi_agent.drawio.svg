@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" width="1000px" height="500px" viewBox="-0.5 -0.5 1000 500" content="&lt;mxfile host=&quot;Electron&quot; agent=&quot;parameter-golf&quot; version=&quot;21.0.0&quot;&gt;
+  &lt;diagram id=&quot;workflow-multi-agent&quot; name=&quot;Workflow&quot;&gt;
+    &lt;mxGraphModel dx=&quot;1000&quot; dy=&quot;600&quot; grid=&quot;1&quot; gridSize=&quot;10&quot; guides=&quot;1&quot; tooltips=&quot;1&quot; connect=&quot;1&quot; arrows=&quot;1&quot; fold=&quot;1&quot; page=&quot;1&quot; pageScale=&quot;1&quot; pageWidth=&quot;1000&quot; pageHeight=&quot;500&quot; background=&quot;#ffffff&quot; math=&quot;1&quot; shadow=&quot;0&quot;&gt;
+      &lt;root&gt;
+        &lt;mxCell id=&quot;0&quot; /&gt;
+        &lt;mxCell id=&quot;1&quot; parent=&quot;0&quot; /&gt;
+        
+        &lt;mxCell id=&quot;orchestrator&quot; value=&quot;&amp;lt;b&amp;gt;Master Orchestrator&amp;lt;/b&amp;gt;&amp;lt;br&amp;gt;Thesis framing, Reverse outline, Task dispatch, Final fusion&quot; style=&quot;rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;strokeWidth=2;fontSize=12;&quot; vertex=&quot;1&quot; parent=&quot;1&quot;&gt;
+          &lt;mxGeometry x=&quot;360&quot; y=&quot;30&quot; width=&quot;280&quot; height=&quot;70&quot; as=&quot;geometry&quot; /&gt;
+        &lt;/mxCell&gt;
+
+        &lt;mxCell id=&quot;analyst&quot; value=&quot;&amp;lt;b&amp;gt;Empirical Analyst Agent&amp;lt;/b&amp;gt;&amp;lt;br&amp;gt;59 runs data extraction, 6-move sequence, Pareto frontiers&quot; style=&quot;rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;strokeWidth=2;fontSize=11;&quot; vertex=&quot;1&quot; parent=&quot;1&quot;&gt;
+          &lt;mxGeometry x=&quot;60&quot; y=&quot;160&quot; width=&quot;260&quot; height=&quot;75&quot; as=&quot;geometry&quot; /&gt;
+        &lt;/mxCell&gt;
+
+        &lt;mxCell id=&quot;theorist&quot; value=&quot;&amp;lt;b&amp;gt;Theoretical Investigator Agent&amp;lt;/b&amp;gt;&amp;lt;br&amp;gt;Module triads, LoRA+ dynamics, 6 vetoed directions analysis&quot; style=&quot;rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;strokeWidth=2;fontSize=11;&quot; vertex=&quot;1&quot; parent=&quot;1&quot;&gt;
+          &lt;mxGeometry x=&quot;370&quot; y=&quot;160&quot; width=&quot;260&quot; height=&quot;75&quot; as=&quot;geometry&quot; /&gt;
+        &lt;/mxCell&gt;
+
+        &lt;mxCell id=&quot;designer&quot; value=&quot;&amp;lt;b&amp;gt;Visual &amp;amp;amp; Drawio Designer Agent&amp;lt;/b&amp;gt;&amp;lt;br&amp;gt;Draw.io XML architectures, Python 300DPI publication charts&quot; style=&quot;rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;strokeWidth=2;fontSize=11;&quot; vertex=&quot;1&quot; parent=&quot;1&quot;&gt;
+          &lt;mxGeometry x=&quot;680&quot; y=&quot;160&quot; width=&quot;260&quot; height=&quot;75&quot; as=&quot;geometry&quot; /&gt;
+        &lt;/mxCell&gt;
+
+        &lt;mxCell id=&quot;gatekeeper&quot; value=&quot;&amp;lt;b&amp;gt;Mechanical &amp;amp;amp; Style Gatekeeper Agent&amp;lt;/b&amp;gt;&amp;lt;br&amp;gt;M1-M18 mechanical gates, S1-S31 semantic gates, Zero em-dashes, Sino-English natural integration&quot; style=&quot;rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;strokeWidth=2;fontSize=12;&quot; vertex=&quot;1&quot; parent=&quot;1&quot;&gt;
+          &lt;mxGeometry x=&quot;250&quot; y=&quot;300&quot; width=&quot;500&quot; height=&quot;70&quot; as=&quot;geometry&quot; /&gt;
+        &lt;/mxCell&gt;
+
+        &lt;mxCell id=&quot;deliverable&quot; value=&quot;&amp;lt;b&amp;gt;FINAL_REPORT.md&amp;lt;/b&amp;gt;&amp;lt;br&amp;gt;Publication-ready ICLR/CVPR standard report &amp;amp;amp; runbook&quot; style=&quot;rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#2ca02c;strokeWidth=3;fontSize=12;&quot; vertex=&quot;1&quot; parent=&quot;1&quot;&gt;
+          &lt;mxGeometry x=&quot;360&quot; y=&quot;410&quot; width=&quot;280&quot; height=&quot;60&quot; as=&quot;geometry&quot; /&gt;
+        &lt;/mxCell&gt;
+
+        &lt;!-- Edges linking multi-agent workflow --&gt;
+        &lt;mxCell id=&quot;e_orch_analyst&quot; value=&quot;Task Contract &amp;amp;amp; Metrics&quot; style=&quot;edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#6c8ebf;strokeWidth=1.5;endArrow=classic;fontSize=10;&quot; edge=&quot;1&quot; parent=&quot;1&quot; source=&quot;orchestrator&quot; target=&quot;analyst&quot;&gt;
+          &lt;mxGeometry relative=&quot;1&quot; as=&quot;geometry&quot; /&gt;
+        &lt;/mxCell&gt;
+        &lt;mxCell id=&quot;e_orch_theorist&quot; value=&quot;Deductive Hypotheses&quot; style=&quot;edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#6c8ebf;strokeWidth=1.5;endArrow=classic;fontSize=10;&quot; edge=&quot;1&quot; parent=&quot;1&quot; source=&quot;orchestrator&quot; target=&quot;theorist&quot;&gt;
+          &lt;mxGeometry relative=&quot;1&quot; as=&quot;geometry&quot; /&gt;
+        &lt;/mxCell&gt;
+        &lt;mxCell id=&quot;e_orch_designer&quot; value=&quot;Visual Specifications&quot; style=&quot;edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#6c8ebf;strokeWidth=1.5;endArrow=classic;fontSize=10;&quot; edge=&quot;1&quot; parent=&quot;1&quot; source=&quot;orchestrator&quot; target=&quot;designer&quot;&gt;
+          &lt;mxGeometry relative=&quot;1&quot; as=&quot;geometry&quot; /&gt;
+        &lt;/mxCell&gt;
+
+        &lt;mxCell id=&quot;e_analyst_gatekeeper&quot; value=&quot;Empirical Drafts &amp;amp;amp; Tables&quot; style=&quot;edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#666666;strokeWidth=1.5;endArrow=classic;fontSize=10;&quot; edge=&quot;1&quot; parent=&quot;1&quot; source=&quot;analyst&quot; target=&quot;gatekeeper&quot;&gt;
+          &lt;mxGeometry relative=&quot;1&quot; as=&quot;geometry&quot; /&gt;
+        &lt;/mxCell&gt;
+        &lt;mxCell id=&quot;e_theorist_gatekeeper&quot; value=&quot;Theory &amp;amp;amp; Veto Proofs&quot; style=&quot;edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#666666;strokeWidth=1.5;endArrow=classic;fontSize=10;&quot; edge=&quot;1&quot; parent=&quot;1&quot; source=&quot;theorist&quot; target=&quot;gatekeeper&quot;&gt;
+          &lt;mxGeometry relative=&quot;1&quot; as=&quot;geometry&quot; /&gt;
+        &lt;/mxCell&gt;
+        &lt;mxCell id=&quot;e_designer_gatekeeper&quot; value=&quot;Charts &amp;amp;amp; Vector Diagrams&quot; style=&quot;edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#666666;strokeWidth=1.5;endArrow=classic;fontSize=10;&quot; edge=&quot;1&quot; parent=&quot;1&quot; source=&quot;designer&quot; target=&quot;gatekeeper&quot;&gt;
+          &lt;mxGeometry relative=&quot;1&quot; as=&quot;geometry&quot; /&gt;
+        &lt;/mxCell&gt;
+
+        &lt;mxCell id=&quot;e_gatekeeper_deliverable&quot; value=&quot;M1-M18 Gate Passed&quot; style=&quot;edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#2ca02c;strokeWidth=2.5;endArrow=classic;fontSize=11;fontStyle=1;&quot; edge=&quot;1&quot; parent=&quot;1&quot; source=&quot;gatekeeper&quot; target=&quot;deliverable&quot;&gt;
+          &lt;mxGeometry relative=&quot;1&quot; as=&quot;geometry&quot; /&gt;
+        &lt;/mxCell&gt;
+      &lt;/root&gt;
+    &lt;/mxGraphModel&gt;
+  &lt;/diagram&gt;
+&lt;/mxfile&gt;">
+  <defs>
+    <style type="text/css">
+      text { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; }
+    </style>
+    <marker id="arrow" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 8 5 L 0 9 z" fill="#333333" />
+    </marker>
+    <marker id="arrow-blue" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 8 5 L 0 9 z" fill="#6c8ebf" />
+    </marker>
+    <marker id="arrow-green" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 8 5 L 0 9 z" fill="#2ca02c" />
+    </marker>
+    <marker id="arrow-amber" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 8 5 L 0 9 z" fill="#d6b656" />
+    </marker>
+    <marker id="arrow-purple" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 8 5 L 0 9 z" fill="#9673a6" />
+    </marker>
+  </defs>
+  <rect x="0" y="0" width="1000" height="500" fill="#ffffff" stroke="none" />
+  
+  <!-- Orchestrator -->
+  <g transform="translate(360, 30)">
+    <rect width="280" height="70" rx="8" fill="#dae8fc" stroke="#6c8ebf" stroke-width="2"/>
+    <text x="140" y="28" text-anchor="middle" font-size="13" font-weight="bold" fill="#1c3d5a">Master Orchestrator</text>
+    <text x="140" y="48" text-anchor="middle" font-size="10" fill="#333333">Thesis Framing, Task Dispatch, Reverse Outline</text>
+  </g>
+
+  <!-- Analyst -->
+  <g transform="translate(60, 160)">
+    <rect width="260" height="75" rx="8" fill="#d5e8d4" stroke="#82b366" stroke-width="2"/>
+    <text x="130" y="26" text-anchor="middle" font-size="12" font-weight="bold" fill="#274e13">Empirical Analyst Agent</text>
+    <text x="130" y="44" text-anchor="middle" font-size="10" fill="#333333">59 Runs Data Extraction &amp; Cleaning</text>
+    <text x="130" y="60" text-anchor="middle" font-size="9.5" fill="#555555">6-Move Sequences, Pareto Frontiers</text>
+  </g>
+
+  <!-- Theorist -->
+  <g transform="translate(370, 160)">
+    <rect width="260" height="75" rx="8" fill="#fff2cc" stroke="#d6b656" stroke-width="2"/>
+    <text x="130" y="26" text-anchor="middle" font-size="12" font-weight="bold" fill="#7f6000">Theoretical Investigator Agent</text>
+    <text x="130" y="44" text-anchor="middle" font-size="10" fill="#333333">Module Triads &amp; Mathematical Proofs</text>
+    <text x="130" y="60" text-anchor="middle" font-size="9.5" fill="#555555">6 Vetoed Hypotheses Deep Dive</text>
+  </g>
+
+  <!-- Designer -->
+  <g transform="translate(680, 160)">
+    <rect width="260" height="75" rx="8" fill="#e1d5e7" stroke="#9673a6" stroke-width="2"/>
+    <text x="130" y="26" text-anchor="middle" font-size="12" font-weight="bold" fill="#4a154b">Visual &amp; Drawio Designer Agent</text>
+    <text x="130" y="44" text-anchor="middle" font-size="10" fill="#333333">Draw.io XML Architecture &amp; Workflows</text>
+    <text x="130" y="60" text-anchor="middle" font-size="9.5" fill="#555555">Python 300DPI Academic Plots (fig1~6)</text>
+  </g>
+
+  <!-- Gatekeeper -->
+  <g transform="translate(250, 290)">
+    <rect width="500" height="75" rx="8" fill="#f8cecc" stroke="#b85450" stroke-width="2"/>
+    <text x="250" y="26" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#900">Mechanical &amp; Style Gatekeeper Agent</text>
+    <text x="250" y="44" text-anchor="middle" font-size="10.5" fill="#333333">M1-M18 Mechanical Gates &amp; S1-S31 Semantic Audits</text>
+    <text x="250" y="60" text-anchor="middle" font-size="9.5" fill="#555555">Strictly Zero Em-dashes, Sino-English Integration, Bold Takeaways</text>
+  </g>
+
+  <!-- Deliverable -->
+  <g transform="translate(360, 410)">
+    <rect width="280" height="60" rx="8" fill="#d5e8d4" stroke="#2ca02c" stroke-width="3"/>
+    <text x="140" y="26" text-anchor="middle" font-size="13" font-weight="bold" fill="#137333">FINAL_REPORT.md</text>
+    <text x="140" y="44" text-anchor="middle" font-size="10" fill="#333333">Publication-grade Research Report &amp; Runbook</text>
+  </g>
+
+  <!-- Flow Arrows with visible arrowheads -->
+  <path d="M 440 100 L 190 155" stroke="#6c8ebf" stroke-width="2" fill="none" marker-end="url(#arrow-blue)"/>
+  <path d="M 500 100 L 500 155" stroke="#6c8ebf" stroke-width="2" fill="none" marker-end="url(#arrow-blue)"/>
+  <path d="M 560 100 L 810 155" stroke="#6c8ebf" stroke-width="2" fill="none" marker-end="url(#arrow-blue)"/>
+
+  <path d="M 190 235 L 350 285" stroke="#666666" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+  <path d="M 500 235 L 500 285" stroke="#666666" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+  <path d="M 810 235 L 650 285" stroke="#666666" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+
+  <path d="M 500 365 L 500 405" stroke="#2ca02c" stroke-width="2.5" fill="none" marker-end="url(#arrow-green)"/>
+
+</svg>

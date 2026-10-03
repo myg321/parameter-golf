@@ -1,4 +1,5 @@
-dataset_path: /storage/data/shiyd2023/datasets/textvqa # lmms-lab/textvqa
+dataset_path: /storage/yiguang/all_datasets/textvqa # lmms-lab/textvqa
+# dataset_path: /storage/data/shiyd2023/datasets/textvqa # lmms-lab/textvqa
 output_type: generate_until
 doc_to_visual: !function utils.textvqa_doc_to_visual
 doc_to_text: !function utils.textvqa_doc_to_text

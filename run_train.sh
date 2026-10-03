@@ -2,9 +2,12 @@
 set -euo pipefail
 
 export WANDB_DISABLED=true
-export CONFIG=${CONFIG:-configs/vlm_textvqa_lora.yaml}
+export CONFIG=${1:-${CONFIG:-configs/vlm_textvqa_lora.yaml}}
 export SEED=${SEED:-1}
 export CUDA_VISIBLE_DEVICES=${CUDA_VISIBLE_DEVICES:-0,1}
+export NCCL_P2P_DISABLE=1
+export NCCL_IB_DISABLE=1
+
 
 python - <<'PY'
 import os
@@ -22,4 +25,12 @@ if not os.path.isdir(prepared):
     sys.exit(1)
 PY
 
-accelerate launch --num_processes 2 --multi_gpu --mixed_precision fp16 train_textvqa_qwen3vl.py --config "${CONFIG}"
+IFS=',' read -ra GPU_LIST <<< "${CUDA_VISIBLE_DEVICES}"
+NUM_GPUS=${#GPU_LIST[@]}
+
+if [ "${NUM_GPUS}" -gt 1 ]; then
+    accelerate launch --num_processes "${NUM_GPUS}" --multi_gpu --mixed_precision fp16 train_textvqa_qwen3vl.py --config "${CONFIG}"
+else
+    accelerate launch --num_processes 1 --mixed_precision fp16 train_textvqa_qwen3vl.py --config "${CONFIG}"
+fi
+

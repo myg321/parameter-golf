@@ -8,6 +8,7 @@ import torch
 import yaml
 from datasets import load_from_disk
 from peft import LoraConfig, get_peft_model
+from peft.optimizers import create_loraplus_optimizer
 from torch.nn.utils.rnn import pad_sequence
 from transformers import AutoModelForVision2Seq, AutoProcessor, Trainer, TrainerCallback, TrainingArguments, set_seed
 
@@ -47,6 +48,77 @@ class TimeLimitCallback(TrainerCallback):
             print(f"[TIMEOUT] Reached {self.max_seconds / 60:.1f} minute training budget")
             control.should_training_stop = True
         return control
+
+
+class EMACallback(TrainerCallback):
+    def __init__(self, decay=0.99, start_step=800):
+        self.decay = float(decay)
+        self.start_step = int(start_step)
+        self.shadow = {}
+        self.step_count = 0
+
+    def on_step_end(self, args, state, control, model=None, **kwargs):
+        if state.global_step >= self.start_step and model is not None:
+            self.step_count += 1
+            d = min(self.decay, (1.0 + self.step_count) / (10.0 + self.step_count))
+            with torch.no_grad():
+                for name, param in model.named_parameters():
+                    if param.requires_grad:
+                        if name not in self.shadow:
+                            self.shadow[name] = param.data.detach().clone().cpu()
+                        else:
+                            self.shadow[name].mul_(d).add_(param.data.detach().cpu(), alpha=1.0 - d)
+        return control
+
+    def apply_ema(self, model):
+        if not self.shadow or model is None:
+            return
+        with torch.no_grad():
+            for name, param in model.named_parameters():
+                if name in self.shadow:
+                    param.data.copy_(self.shadow[name].to(param.device))
+
+
+
+class LoRATrainer(Trainer):
+    def __init__(self, *args, loraplus_lr_ratio=None, eos_loss_weight=1.0, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.loraplus_lr_ratio = loraplus_lr_ratio
+        self.eos_loss_weight = float(eos_loss_weight)
+
+    def compute_loss(self, model, inputs, return_outputs=False, num_items_in_batch=None):
+        if self.eos_loss_weight <= 1.0:
+            return super().compute_loss(model, inputs, return_outputs=return_outputs)
+        labels = inputs.get("labels")
+        outputs = model(**inputs)
+        logits = outputs.get("logits")
+        shift_logits = logits[..., :-1, :].contiguous()
+        shift_labels = labels[..., 1:].contiguous()
+        loss_fct = torch.nn.CrossEntropyLoss(reduction="none")
+        loss = loss_fct(shift_logits.view(-1, shift_logits.size(-1)), shift_labels.view(-1))
+        weights = torch.ones_like(shift_labels.view(-1), dtype=torch.float32)
+        weights[shift_labels.view(-1) == 151645] = self.eos_loss_weight
+        valid_mask = (shift_labels.view(-1) != -100)
+        weighted_loss = (loss * weights * valid_mask).sum() / (weights * valid_mask).sum().clamp(min=1.0)
+        return (weighted_loss, outputs) if return_outputs else weighted_loss
+
+    def create_optimizer(self):
+        if self.loraplus_lr_ratio is not None and float(self.loraplus_lr_ratio) > 1.0:
+            if self.optimizer is None:
+                self.optimizer = create_loraplus_optimizer(
+                    model=self.model,
+                    optimizer_cls=torch.optim.AdamW,
+                    lr=self.args.learning_rate,
+                    loraplus_lr_ratio=float(self.loraplus_lr_ratio),
+                    loraplus_weight_decay=self.args.weight_decay,
+                    betas=(self.args.adam_beta1, self.args.adam_beta2),
+                    eps=self.args.adam_epsilon,
+                )
+                print(f"[INFO] LoRA+ optimizer created with ratio={self.loraplus_lr_ratio}, base_lr={self.args.learning_rate}")
+                for idx, group in enumerate(self.optimizer.param_groups):
+                    print(f"  Group {idx}: lr={group['lr']}, weight_decay={group.get('weight_decay', 0.0)}, num_params={len(group['params'])}")
+            return self.optimizer
+        return super().create_optimizer()
 
 
 class TextVQADataset(torch.utils.data.Dataset):
@@ -140,18 +212,27 @@ def main():
         for param in model.visual.parameters():
             param.requires_grad = False
 
-    lora_config = LoraConfig(
-        r=int(cfg["lora_r"]),
-        lora_alpha=int(cfg["lora_alpha"]),
-        lora_dropout=float(cfg["lora_dropout"]),
-        target_modules=cfg["target_modules"],
-        bias="none",
-        task_type="CAUSAL_LM",
-    )
+    lora_kwargs = {
+        "r": int(cfg["lora_r"]),
+        "lora_alpha": int(cfg["lora_alpha"]),
+        "lora_dropout": float(cfg["lora_dropout"]),
+        "target_modules": cfg["target_modules"],
+        "bias": "none",
+        "task_type": "CAUSAL_LM",
+    }
+    if "rank_pattern" in cfg and cfg["rank_pattern"]:
+        lora_kwargs["rank_pattern"] = cfg["rank_pattern"]
+    if "alpha_pattern" in cfg and cfg["alpha_pattern"]:
+        lora_kwargs["alpha_pattern"] = cfg["alpha_pattern"]
+
+    lora_config = LoraConfig(**lora_kwargs)
     model = get_peft_model(model, lora_config)
     model.print_trainable_parameters()
-    model.gradient_checkpointing_enable(gradient_checkpointing_kwargs={"use_reentrant": False})
-    model.enable_input_require_grads()
+
+    use_gc = bool(cfg.get("gradient_checkpointing", True))
+    if use_gc:
+        model.gradient_checkpointing_enable(gradient_checkpointing_kwargs={"use_reentrant": False})
+        model.enable_input_require_grads()
 
     raw_ds = load_prepared_dataset(cfg)
     train_ds = TextVQADataset(raw_ds, processor, cfg)
@@ -164,34 +245,87 @@ def main():
         learning_rate=float(cfg["learning_rate"]),
         warmup_ratio=float(cfg["warmup_ratio"]),
         weight_decay=float(cfg["weight_decay"]),
+        adam_beta1=float(cfg.get("adam_beta1", 0.9)),
+        adam_beta2=float(cfg.get("adam_beta2", 0.999)),
+        max_grad_norm=float(cfg.get("max_grad_norm", 1.0)),
         logging_steps=int(cfg["logging_steps"]),
         save_strategy="no",
         fp16=True,
         bf16=False,
         dataloader_num_workers=int(cfg["dataloader_num_workers"]),
         remove_unused_columns=False,
-        gradient_checkpointing=True,
-        gradient_checkpointing_kwargs={"use_reentrant": False},
+        gradient_checkpointing=use_gc,
+        gradient_checkpointing_kwargs={"use_reentrant": False} if use_gc else None,
+        lr_scheduler_type=cfg.get("lr_scheduler_type", "linear"),
         optim="adamw_torch",
         report_to="none",
         ddp_find_unused_parameters=False,
     )
 
-    trainer = Trainer(
+    callbacks = [TimeLimitCallback(int(cfg.get("max_train_seconds", 0)))]
+    ema_callback = None
+    if bool(cfg.get("use_ema", False)):
+        ema_callback = EMACallback(
+            decay=float(cfg.get("ema_decay", 0.99)),
+            start_step=int(cfg.get("ema_start_step", 800)),
+        )
+        callbacks.append(ema_callback)
+        print(f"[INFO] Attached EMACallback with decay={cfg.get('ema_decay', 0.99)}, start_step={cfg.get('ema_start_step', 800)}")
+
+    trainer = LoRATrainer(
         model=model,
         args=training_args,
         train_dataset=train_ds,
         data_collator=lambda examples: collate_fn(examples, processor),
-        callbacks=[TimeLimitCallback(int(cfg.get("max_train_seconds", 0)))],
+        callbacks=callbacks,
+        loraplus_lr_ratio=cfg.get("loraplus_lr_ratio", None),
+        eos_loss_weight=cfg.get("eos_loss_weight", 1.0),
     )
     trainer.train()
 
-    final_dir = os.path.join(cfg["output_dir"], "final")
-    os.makedirs(final_dir, exist_ok=True)
-    trainer.save_model(final_dir)
-    processor.save_pretrained(final_dir)
-    with open(os.path.join(final_dir, "training_config.json"), "w", encoding="utf-8") as f:
-        json.dump(cfg, f, indent=2, sort_keys=True)
+    if ema_callback is not None and ema_callback.shadow:
+        final_raw_dir = os.path.join(cfg["output_dir"], "final_raw")
+        os.makedirs(final_raw_dir, exist_ok=True)
+        trainer.save_model(final_raw_dir)
+        processor.save_pretrained(final_raw_dir)
+        with open(os.path.join(final_raw_dir, "training_config.json"), "w", encoding="utf-8") as f:
+            json.dump(cfg, f, indent=2, sort_keys=True)
+        print(f"[INFO] Successfully saved RAW adapter model to {final_raw_dir}")
+
+        raw_params = {
+            name: param.data.detach().clone()
+            for name, param in model.named_parameters()
+            if name in ema_callback.shadow
+        }
+
+        final_ema_dir = os.path.join(cfg["output_dir"], "final_ema")
+        os.makedirs(final_ema_dir, exist_ok=True)
+        ema_callback.apply_ema(model)
+        trainer.save_model(final_ema_dir)
+        processor.save_pretrained(final_ema_dir)
+        with open(os.path.join(final_ema_dir, "training_config.json"), "w", encoding="utf-8") as f:
+            json.dump(cfg, f, indent=2, sort_keys=True)
+        print(f"[INFO] Successfully saved EMA adapter model to {final_ema_dir}")
+
+        final_dir = os.path.join(cfg["output_dir"], "final")
+        os.makedirs(final_dir, exist_ok=True)
+        with torch.no_grad():
+            for name, param in model.named_parameters():
+                if name in raw_params:
+                    param.data.mul_(0.5).add_(raw_params[name], alpha=0.5)
+        trainer.save_model(final_dir)
+        processor.save_pretrained(final_dir)
+        with open(os.path.join(final_dir, "training_config.json"), "w", encoding="utf-8") as f:
+            json.dump(cfg, f, indent=2, sort_keys=True)
+        print(f"[INFO] Successfully saved 50/50 Raw+EMA Auto-Fused champion adapter model to {final_dir}")
+    else:
+        final_dir = os.path.join(cfg["output_dir"], "final")
+        os.makedirs(final_dir, exist_ok=True)
+        trainer.save_model(final_dir)
+        processor.save_pretrained(final_dir)
+        with open(os.path.join(final_dir, "training_config.json"), "w", encoding="utf-8") as f:
+            json.dump(cfg, f, indent=2, sort_keys=True)
+        print(f"[INFO] Successfully saved adapter model to {final_dir}")
 
 
 if __name__ == "__main__":

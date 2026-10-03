@@ -68,10 +68,6 @@ def main():
         raise FileNotFoundError(f"No parquet files matched data_path={cfg['data_path']}")
 
     ds = Dataset.from_parquet(files)
-    ds = ds.shuffle(seed=cfg["seed"])
-    max_samples = int(cfg.get("max_train_samples", 0))
-    if max_samples > 0:
-        ds = ds.select(range(min(max_samples, len(ds))))
 
     use_ocr = bool(cfg.get("use_ocr_tokens", True))
     max_ocr_tokens = int(cfg.get("max_ocr_tokens", 16))
@@ -82,6 +78,35 @@ def main():
         return item
 
     ds = ds.map(add_training_fields, desc="Preparing TextVQA prompts")
+
+    if bool(cfg.get("order_by_ocr_alignment", False)):
+        aligned_indices = []
+        unaligned_indices = []
+        for idx in range(len(ds)):
+            item = ds[idx]
+            tgt = item["target_answer"]
+            if not tgt or tgt == "unanswerable":
+                unaligned_indices.append(idx)
+                continue
+            ocr_toks = [normalize_answer(t) for t in item.get("ocr_tokens", []) if str(t).strip()]
+            if any(tgt == tok or tgt in tok for tok in ocr_toks):
+                aligned_indices.append(idx)
+            else:
+                unaligned_indices.append(idx)
+
+        import random
+        rng = random.Random(cfg["seed"])
+        rng.shuffle(aligned_indices)
+        rng.shuffle(unaligned_indices)
+        ordered_indices = aligned_indices + unaligned_indices
+        ds = ds.select(ordered_indices)
+        print(f"[INFO] Reordered dataset: {len(aligned_indices)} OCR-aligned samples first, followed by {len(unaligned_indices)} unaligned samples.")
+    else:
+        ds = ds.shuffle(seed=cfg["seed"])
+
+    max_samples = int(cfg.get("max_train_samples", 0))
+    if max_samples > 0:
+        ds = ds.select(range(min(max_samples, len(ds))))
     os.makedirs(os.path.dirname(cfg["prepared_data_dir"]), exist_ok=True)
     ds.save_to_disk(cfg["prepared_data_dir"])
 
